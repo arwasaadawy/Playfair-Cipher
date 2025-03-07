@@ -74,4 +74,5 @@ while True:
         if again == '2':
             break
         elif again == '3':
+         print("Thanks")
             exit()
