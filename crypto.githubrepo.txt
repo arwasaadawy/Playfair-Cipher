@@ -1,0 +1,77 @@
+import itertools
+import re
+
+def validate_input(text):
+    if not re.match("^[A-Za-z ]+$", text):
+        raise ValueError("Input must contain only English letters and spaces")
+    return text
+
+def prepare_text(text):
+    text = text.upper().replace("J", "I").replace(" ", "")
+    new_text = ""
+    i = 0
+    while i < len(text):
+        new_text += text[i]
+        if i + 1 < len(text):
+            if text[i] == text[i + 1]:
+                new_text += 'X'
+            new_text += text[i + 1]
+        i += 2
+    if len(new_text) % 2 != 0:
+        new_text += 'X'
+    return new_text
+
+def create_playfair_matrix(keyword):
+    keyword = keyword.upper().replace("J", "I").replace(" ", "") 
+    keyword = "".join(sorted(set(keyword), key=keyword.index))
+    alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
+    matrix = "".join(dict.fromkeys(keyword + alphabet))
+    return [list(matrix[i:i+5]) for i in range(0, 25, 5)]
+
+def find_position(matrix, letter):
+    for row in range(5):
+        for col in range(5):
+            if matrix[row][col] == letter:
+                return row, col
+    raise ValueError(f"Letter {letter} not found in Playfair matrix")
+
+def playfair_cipher(text, matrix, mode="encrypt"):
+    original_text = text 
+    text = prepare_text(text).upper()
+    result = ""
+    shift = 1 if mode == "encrypt" else -1
+    
+    for i in range(0, len(text), 2):
+        row1, col1 = find_position(matrix, text[i])
+        row2, col2 = find_position(matrix, text[i+1])
+        
+        if row1 == row2:
+            result += matrix[row1][(col1 + shift) % 5] + matrix[row2][(col2 + shift) % 5]
+        elif col1 == col2:
+            result += matrix[(row1 + shift) % 5][col1] + matrix[(row2 + shift) % 5][col2]
+        else:
+            result += matrix[row1][col2] + matrix[row2][col1]
+    
+    final_result = "".join(result[i].lower() if original_text[i].islower() else result[i] for i in range(len(original_text)))
+    return final_result
+
+while True:
+    keyword = input("Enter keyword: ")
+    matrix = create_playfair_matrix(keyword)
+    
+    while True:
+        choice = input("Enter 1 to Encrypt or 2 to Decrypt: ").strip()
+        if choice not in ['1', '2']:
+            print("Invalid choice. Please enter '1' for encryption or '2' for decryption.")
+            continue
+        
+        mode = "encrypt" if choice == '1' else "decrypt"
+        text = validate_input(input("Enter text: "))
+        result = playfair_cipher(text, matrix, mode)
+        print(f"Result: {result}")
+        
+        again = input("Enter 1 to try again, 2 to change keyword, or 3 to exit: ").strip()
+        if again == '2':
+            break
+        elif again == '3':
+            exit()
